@@ -186,11 +186,11 @@ public class JSCSSMergeServlet extends HttpServlet {
         this.turnOfUrlFingerPrinting = readBoolean(config.getInitParameter(INIT_PARAM_TURN_OFF_URL_FINGERPRINTING), this.turnOfUrlFingerPrinting);
         this.customContextPathForCSSUrls = config.getInitParameter(INIT_PARAM_CUSTOM_CONTEXT_PATH_FOR_CSS_URLS);
         LOGGER.debug("Servlet initialized: {\n\t{}:{},\n\t{}:{},\n\t{}:{},\n\t{}:{}\n\t{}:{}\n}", new Object[]{
-            INIT_PARAM_EXPIRES_MINUTES, String.valueOf(this.expiresMinutes),
-            INIT_PARAM_CACHE_CONTROL, this.cacheControl,
-            INIT_PARAM_AUTO_CORRECT_URLS_IN_CSS, String.valueOf(this.autoCorrectUrlsInCSS),
-            INIT_PARAM_TURN_OFF_E_TAG, String.valueOf(this.turnOfETag),
-            INIT_PARAM_TURN_OFF_URL_FINGERPRINTING, String.valueOf(this.turnOfUrlFingerPrinting)}
+                INIT_PARAM_EXPIRES_MINUTES, String.valueOf(this.expiresMinutes),
+                INIT_PARAM_CACHE_CONTROL, this.cacheControl,
+                INIT_PARAM_AUTO_CORRECT_URLS_IN_CSS, String.valueOf(this.autoCorrectUrlsInCSS),
+                INIT_PARAM_TURN_OFF_E_TAG, String.valueOf(this.turnOfETag),
+                INIT_PARAM_TURN_OFF_URL_FINGERPRINTING, String.valueOf(this.turnOfUrlFingerPrinting)}
         );
     }
 
@@ -223,7 +223,7 @@ public class JSCSSMergeServlet extends HttpServlet {
     */
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-        throws ServletException, IOException {
+            throws ServletException, IOException {
 
         String url = this.getURL(req);
 
@@ -249,7 +249,7 @@ public class JSCSSMergeServlet extends HttpServlet {
 
         OutputStream outputStream = resp.getOutputStream();
         String contextPathForCss = customContextPathForCSSUrls != null ?
-            customContextPathForCSSUrls : req.getContextPath();
+                customContextPathForCSSUrls : req.getContextPath();
         int resourcesNotFound = this.processResources(contextPathForCss, outputStream, resourcesToMerge);
 
         if (resourcesNotFound > 0 && resourcesNotFound == resourcesToMerge.size()) { //all resources not found
@@ -410,12 +410,12 @@ public class JSCSSMergeServlet extends HttpServlet {
                 String imgRealPath = context.getRealPath(resolvedImgPath);
                 int offset = line.indexOf(refImgPath);
                 line.replace(
-                    offset, //from
-                    offset + refImgPath.length(), //to
-                    contextPath + (this.turnOfUrlFingerPrinting ? resolvedImgPath : addFingerPrint(buildETagForResource(resolvedImgPath, context), resolvedImgPath))
+                        offset, //from
+                        offset + refImgPath.length(), //to
+                        contextPath + (this.turnOfUrlFingerPrinting ? resolvedImgPath : addFingerPrint(buildETagForResource(resolvedImgPath, context), resolvedImgPath))
                 );
-
                 updateReferenceMap(cssRealPath, imgRealPath);
+                matcher.reset(line.subSequence(offset + refImgPath.length(), line.length()));
             }
         }
         return line.toString();
