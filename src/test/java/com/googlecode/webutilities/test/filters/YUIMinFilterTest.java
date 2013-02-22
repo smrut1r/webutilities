@@ -17,6 +17,8 @@
 package com.googlecode.webutilities.test.filters;
 
 import java.util.Properties;
+
+import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,11 +141,13 @@ public class YUIMinFilterTest extends TestCase {
 
             String actualOutput = servletTestModule.getOutput();
 
-            assertNotNull(actualOutput);
+            Assert.assertNotNull(actualOutput);
 
             String expectedOutput = this.getExpectedOutput();
 
-            assertEquals(expectedOutput.trim(), actualOutput.trim());
+            Assert.assertEquals(expectedOutput.trim(), actualOutput.trim());
+
+            Assert.assertEquals(""+actualOutput.length(), webMockObjectFactory.getMockResponse().getHeader("Content-Length"));
 
             this.post();
 

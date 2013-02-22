@@ -27,6 +27,7 @@ import static com.googlecode.webutilities.util.Utils.*;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 
@@ -178,11 +179,21 @@ public class YUIMinFilter extends AbstractFilter {
             if (lowerUrl.endsWith(EXT_JS) || lowerUrl.endsWith(EXT_JSON) || (wrapper.getContentType() != null && (wrapper.getContentType().equals(MIME_JS) || wrapper.getContentType().equals(MIME_JSON)))) {
                 JavaScriptCompressor compressor = new JavaScriptCompressor(sr, null);
                 LOGGER.trace("Compressing JS/JSON type");
-                compressor.compress(out, this.lineBreak, !this.noMunge, false, this.preserveSemi, this.disableOptimizations);
+
+                // Fixed bug with contentLength
+                StringWriter stringWriter = new StringWriter();
+                compressor.compress(stringWriter, this.lineBreak, !this.noMunge, false, this.preserveSemi, this.disableOptimizations);
+                writeCompressedResponse(resp, out, stringWriter);
+
             } else if (lowerUrl.endsWith(EXT_CSS) || (wrapper.getContentType() != null && (wrapper.getContentType().equals(MIME_CSS)))) {
                 CssCompressor compressor = new CssCompressor(sr);
                 LOGGER.trace("Compressing CSS type");
-                compressor.compress(out, this.lineBreak);
+
+                // Fixed bug with contentLength
+                StringWriter stringWriter = new StringWriter();
+                compressor.compress(stringWriter, this.lineBreak);
+                writeCompressedResponse(resp, out, stringWriter);
+
             } else {
                 LOGGER.trace("Not Compressing anything.");
                 out.write(wrapper.getContents());
@@ -193,6 +204,12 @@ public class YUIMinFilter extends AbstractFilter {
             LOGGER.trace("Not minifying. URL/UserAgent not allowed.");
             chain.doFilter(req, resp);
         }
+    }
+
+    private void writeCompressedResponse(ServletResponse resp, Writer out, StringWriter stringWriter) throws IOException {
+        String compressed = stringWriter.toString();
+        resp.setContentLength(compressed.length());
+        out.write(compressed);
     }
 
     @Override
@@ -216,11 +233,11 @@ public class YUIMinFilter extends AbstractFilter {
         this.disableOptimizations = readBoolean(filterConfig.getInitParameter(INIT_PARAM_DISABLE_OPTIMIZATIONS), this.disableOptimizations);
 
         LOGGER.debug("Filter initialized with: {\n\t{}:{},\n\t{}:{},\n\t{}:{}\n\t{}:{},\n\t{}:{}\n}", new Object[]{
-            INIT_PARAM_LINE_BREAK, String.valueOf(lineBreak),
-            INIT_PARAM_NO_MUNGE, String.valueOf(noMunge),
-            INIT_PARAM_PRESERVE_SEMI, String.valueOf(preserveSemi),
-            INIT_PARAM_DISABLE_OPTIMIZATIONS, String.valueOf(disableOptimizations),
-            INIT_PARAM_CHARSET, charset});
+                INIT_PARAM_LINE_BREAK, String.valueOf(lineBreak),
+                INIT_PARAM_NO_MUNGE, String.valueOf(noMunge),
+                INIT_PARAM_PRESERVE_SEMI, String.valueOf(preserveSemi),
+                INIT_PARAM_DISABLE_OPTIMIZATIONS, String.valueOf(disableOptimizations),
+                INIT_PARAM_CHARSET, charset});
 
     }
 
