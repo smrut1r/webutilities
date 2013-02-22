@@ -230,19 +230,19 @@ public class JSCSSMergeServlet extends HttpServlet {
         LOGGER.debug("Started processing request : {}", url);
 
         List<String> resourcesToMerge = findResourcesToMerge(req.getContextPath(), url);
+        String extensionOrPath = detectExtension(url);//in case of non js/css files it null
+        if (extensionOrPath == null) {
+            extensionOrPath = resourcesToMerge.get(0);//non grouped i.e. non css/js file, we refer it's path in that case
+        }
 
         //If not modified, return 304 and stop
         ResourceStatus status = this.isNotModified(req, resp, resourcesToMerge);
         if (status.isNotModified()) {
             LOGGER.trace("Resources Not Modified. Sending 304.");
-            this.sendNotModified(resp);
+            this.sendNotModified(resp, extensionOrPath, status.getActualETag());
             return;
         }
 
-        String extensionOrPath = detectExtension(url);//in case of non js/css files it null
-        if (extensionOrPath == null) {
-            extensionOrPath = resourcesToMerge.get(0);//non grouped i.e. non css/js file, we refer it's path in that case
-        }
 
         //Add appropriate headers
         this.addAppropriateResponseHeaders(extensionOrPath, resourcesToMerge, status.getActualETag(), resp);
@@ -271,9 +271,21 @@ public class JSCSSMergeServlet extends HttpServlet {
     /**
      * @param response httpServletResponse
      */
-    private void sendNotModified(HttpServletResponse response) {
+    private void sendNotModified(HttpServletResponse response, String extensionOrFile, String hashForETag) {
         response.setContentLength(0);
         response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+        String mime = selectMimeForExtension(extensionOrFile);
+        if (mime != null) {
+            LOGGER.trace("Setting MIME to {}", mime);
+            response.setContentType(mime);
+        }
+        response.addDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
+        response.addHeader(HTTP_CACHE_CONTROL_HEADER, this.cacheControl);
+        if (hashForETag != null && !this.turnOfETag) {
+            response.addHeader(HTTP_ETAG_HEADER, hashForETag);
+        }
+        response.addHeader(HEADER_X_OPTIMIZED_BY, X_OPTIMIZED_BY_VALUE);
+        LOGGER.trace("Added expires, last-modified & ETag headers");
     }
 
     /**
@@ -298,7 +310,6 @@ public class JSCSSMergeServlet extends HttpServlet {
             Date date = readDateFromHeader(ifModifiedSince);
             if (date != null) {
                 if (!isAnyResourceModifiedSince(resourcesToMerge, date.getTime(), context)) {
-                    this.sendNotModified(response);
                     return new ResourceStatus(null, true);
                 }
             }
