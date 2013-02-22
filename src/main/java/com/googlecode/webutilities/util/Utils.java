@@ -263,7 +263,8 @@ public final class Utils {
       resourcePath = servletContext.getRealPath(resourcePath);
       if (resourcePath == null) continue;
       File resource = new File(resourcePath);
-      long lastModified = resource.lastModified();
+                                              // simulate as if it's header date (w/o milliseconds)
+      long lastModified = readDateFromHeader(forHeaderDate(resource.lastModified())).getTime();
       if (lastModified > sinceTime) {
         return true;
       }
