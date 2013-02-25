@@ -146,6 +146,7 @@ public class CharacterEncodingFilter extends AbstractFilter {
         }
         String mime = selectMimeForExtension(extensionOrFile);
         LOGGER.trace("Predicted output mime : {} for URL: {} ", new Object[]{mime, url});
+        chain.doFilter(req, resp); //Let response be written and then force response encoding
         if (encoding != null && force && this.isMIMEAccepted(mime)) {
             try {
                 resp.setCharacterEncoding(encoding);
@@ -155,7 +156,5 @@ public class CharacterEncodingFilter extends AbstractFilter {
                 //failed to set encoding may be you have Servlet <= 2.3 (which doesn't have response.setCharacterEncoding)
             }
         }
-        chain.doFilter(req, resp);
     }
-
 }

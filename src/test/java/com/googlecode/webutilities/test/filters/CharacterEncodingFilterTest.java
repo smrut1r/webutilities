@@ -17,6 +17,7 @@
 package com.googlecode.webutilities.test.filters;
 
 import com.googlecode.webutilities.filters.CharacterEncodingFilter;
+import com.googlecode.webutilities.filters.ResponseCacheFilter;
 import com.googlecode.webutilities.servlets.JSCSSMergeServlet;
 import com.googlecode.webutilities.util.Utils;
 import com.mockrunner.mock.web.WebMockObjectFactory;
@@ -33,6 +34,8 @@ public class CharacterEncodingFilterTest {
     private JSCSSMergeServlet jscssMergeServlet = new JSCSSMergeServlet();
 
     private CharacterEncodingFilter characterEncodingFilter = new CharacterEncodingFilter();
+
+    private ResponseCacheFilter responseCacheFilter = new ResponseCacheFilter();
 
     private WebMockObjectFactory webMockObjectFactory = new WebMockObjectFactory();
 
@@ -112,6 +115,8 @@ public class CharacterEncodingFilterTest {
         servletTestModule.setServlet(jscssMergeServlet, true);
 
         servletTestModule.addFilter(characterEncodingFilter, true);
+
+        servletTestModule.addFilter(responseCacheFilter, true);
 
         servletTestModule.setDoChain(true);
 
