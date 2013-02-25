@@ -230,7 +230,7 @@ public final class Utils {
       extension = "";
     }
 
-    requestURI = requestURI.replace(contextPath, "");//.replace(extension, "");//remove the context path & ext. will become /path/subpath/a,b,/anotherpath/c
+    requestURI = requestURI.replaceFirst(contextPath, "");//.replace(extension, "");//remove the context path & ext. will become /path/subpath/a,b,/anotherpath/c
     requestURI = requestURI.substring(0, requestURI.lastIndexOf(extension));
 
     String[] resourcesPath = requestURI.split(",");
