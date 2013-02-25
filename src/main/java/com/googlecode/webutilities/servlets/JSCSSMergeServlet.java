@@ -15,6 +15,24 @@
  */
 package com.googlecode.webutilities.servlets;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.util.Date;
+import java.util.List;
+import java.util.regex.Matcher;
+
 import static com.googlecode.webutilities.common.Constants.CSS_IMG_URL_PATTERN;
 import static com.googlecode.webutilities.common.Constants.DEFAULT_CACHE_CONTROL;
 import static com.googlecode.webutilities.common.Constants.DEFAULT_EXPIRES_MINUTES;
@@ -27,23 +45,23 @@ import static com.googlecode.webutilities.common.Constants.HTTP_ETAG_HEADER;
 import static com.googlecode.webutilities.common.Constants.HTTP_IF_MODIFIED_SINCE;
 import static com.googlecode.webutilities.common.Constants.HTTP_IF_NONE_MATCH_HEADER;
 import static com.googlecode.webutilities.common.Constants.X_OPTIMIZED_BY_VALUE;
-import static com.googlecode.webutilities.util.Utils.*;
-
-import java.io.*;
-import java.util.Date;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.regex.Matcher;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static com.googlecode.webutilities.util.Utils.addFingerPrint;
+import static com.googlecode.webutilities.util.Utils.buildETagForResource;
+import static com.googlecode.webutilities.util.Utils.buildETagForResources;
+import static com.googlecode.webutilities.util.Utils.buildProperPath;
+import static com.googlecode.webutilities.util.Utils.detectExtension;
+import static com.googlecode.webutilities.util.Utils.findResourcesToMerge;
+import static com.googlecode.webutilities.util.Utils.getLastModifiedFor;
+import static com.googlecode.webutilities.util.Utils.getParentPath;
+import static com.googlecode.webutilities.util.Utils.isAnyResourceETagModified;
+import static com.googlecode.webutilities.util.Utils.isAnyResourceModifiedSince;
+import static com.googlecode.webutilities.util.Utils.isProtocolURL;
+import static com.googlecode.webutilities.util.Utils.readBoolean;
+import static com.googlecode.webutilities.util.Utils.readDateFromHeader;
+import static com.googlecode.webutilities.util.Utils.readLong;
+import static com.googlecode.webutilities.util.Utils.removeFingerPrint;
+import static com.googlecode.webutilities.util.Utils.selectMimeForExtension;
+import static com.googlecode.webutilities.util.Utils.updateReferenceMap;
 
 
 /**
@@ -168,13 +186,13 @@ public class JSCSSMergeServlet extends HttpServlet {
 
     private boolean autoCorrectUrlsInCSS = true; //default
 
-    private boolean turnOfETag = false; //default enable eTag
+    private boolean turnOffETag = false; //default enable eTag
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JSCSSMergeServlet.class.getName());
 
     private String customContextPathForCSSUrls; // filling this will replace the default value: request.getContextPath()
 
-    private boolean turnOfUrlFingerPrinting = false; //default enabled fingerprinting
+    private boolean turnOffUrlFingerPrinting = false; //default enabled fingerprinting
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -182,15 +200,15 @@ public class JSCSSMergeServlet extends HttpServlet {
         this.expiresMinutes = readLong(config.getInitParameter(INIT_PARAM_EXPIRES_MINUTES), this.expiresMinutes);
         this.cacheControl = config.getInitParameter(INIT_PARAM_CACHE_CONTROL) != null ? config.getInitParameter(INIT_PARAM_CACHE_CONTROL) : this.cacheControl;
         this.autoCorrectUrlsInCSS = readBoolean(config.getInitParameter(INIT_PARAM_AUTO_CORRECT_URLS_IN_CSS), this.autoCorrectUrlsInCSS);
-        this.turnOfETag = readBoolean(config.getInitParameter(INIT_PARAM_TURN_OFF_E_TAG), this.turnOfETag);
-        this.turnOfUrlFingerPrinting = readBoolean(config.getInitParameter(INIT_PARAM_TURN_OFF_URL_FINGERPRINTING), this.turnOfUrlFingerPrinting);
+        this.turnOffETag = readBoolean(config.getInitParameter(INIT_PARAM_TURN_OFF_E_TAG), this.turnOffETag);
+        this.turnOffUrlFingerPrinting = readBoolean(config.getInitParameter(INIT_PARAM_TURN_OFF_URL_FINGERPRINTING), this.turnOffUrlFingerPrinting);
         this.customContextPathForCSSUrls = config.getInitParameter(INIT_PARAM_CUSTOM_CONTEXT_PATH_FOR_CSS_URLS);
         LOGGER.debug("Servlet initialized: {\n\t{}:{},\n\t{}:{},\n\t{}:{},\n\t{}:{}\n\t{}:{}\n}", new Object[]{
                 INIT_PARAM_EXPIRES_MINUTES, String.valueOf(this.expiresMinutes),
                 INIT_PARAM_CACHE_CONTROL, this.cacheControl,
                 INIT_PARAM_AUTO_CORRECT_URLS_IN_CSS, String.valueOf(this.autoCorrectUrlsInCSS),
-                INIT_PARAM_TURN_OFF_E_TAG, String.valueOf(this.turnOfETag),
-                INIT_PARAM_TURN_OFF_URL_FINGERPRINTING, String.valueOf(this.turnOfUrlFingerPrinting)}
+                INIT_PARAM_TURN_OFF_E_TAG, String.valueOf(this.turnOffETag),
+                INIT_PARAM_TURN_OFF_URL_FINGERPRINTING, String.valueOf(this.turnOffUrlFingerPrinting)}
         );
     }
 
@@ -211,7 +229,7 @@ public class JSCSSMergeServlet extends HttpServlet {
         resp.addDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
         resp.addHeader(HTTP_CACHE_CONTROL_HEADER, this.cacheControl);
         resp.addDateHeader(HEADER_LAST_MODIFIED, lastModifiedFor);
-        if (hashForETag != null && !this.turnOfETag) {
+        if (hashForETag != null && !this.turnOffETag) {
             resp.addHeader(HTTP_ETAG_HEADER, hashForETag);
         }
         resp.addHeader(HEADER_X_OPTIMIZED_BY, X_OPTIMIZED_BY_VALUE);
@@ -236,10 +254,11 @@ public class JSCSSMergeServlet extends HttpServlet {
         }
 
         //If not modified, return 304 and stop
-        ResourceStatus status = this.isNotModified(req, resp, resourcesToMerge);
+        ResourceStatus status = JSCSSMergeServlet.isNotModified(this.getServletContext(), req, resourcesToMerge, this.turnOffETag);
         if (status.isNotModified()) {
             LOGGER.trace("Resources Not Modified. Sending 304.");
-            this.sendNotModified(resp, extensionOrPath, status.getActualETag());
+            String ETag = !this.turnOffETag ? status.getActualETag() : null;
+            JSCSSMergeServlet.sendNotModified(resp, extensionOrPath, ETag, this.expiresMinutes, this.cacheControl);
             return;
         }
 
@@ -271,7 +290,7 @@ public class JSCSSMergeServlet extends HttpServlet {
     /**
      * @param response httpServletResponse
      */
-    private void sendNotModified(HttpServletResponse response, String extensionOrFile, String hashForETag) {
+    public static void sendNotModified(HttpServletResponse response, String extensionOrFile, String hashForETag, long expiresMinutes, String cacheControl) {
         response.setContentLength(0);
         response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
         String mime = selectMimeForExtension(extensionOrFile);
@@ -280,8 +299,10 @@ public class JSCSSMergeServlet extends HttpServlet {
             response.setContentType(mime);
         }
         response.addDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
-        response.addHeader(HTTP_CACHE_CONTROL_HEADER, this.cacheControl);
-        if (hashForETag != null && !this.turnOfETag) {
+        if (cacheControl != null) {
+            response.addHeader(HTTP_CACHE_CONTROL_HEADER, cacheControl);
+        }
+        if (hashForETag != null /*&& !this.turnOffETag*/) {
             response.addHeader(HTTP_ETAG_HEADER, hashForETag);
         }
         response.addHeader(HEADER_X_OPTIMIZED_BY, X_OPTIMIZED_BY_VALUE);
@@ -298,12 +319,10 @@ public class JSCSSMergeServlet extends HttpServlet {
 
     /**
      * @param request          - HttpServletRequest
-     * @param response         - HttpServletResponse
      * @param resourcesToMerge - list of resources relative paths
      * @return true if not modified based on if-None-Match and If-Modified-Since
      */
-    private ResourceStatus isNotModified(HttpServletRequest request, HttpServletResponse response, List<String> resourcesToMerge) {
-        ServletContext context = this.getServletContext();
+    public static ResourceStatus isNotModified(ServletContext context, HttpServletRequest request, List<String> resourcesToMerge, boolean turnOffETag) {
         //If-Modified-Since
         String ifModifiedSince = request.getHeader(HTTP_IF_MODIFIED_SINCE);
         if (ifModifiedSince != null) {
@@ -316,8 +335,8 @@ public class JSCSSMergeServlet extends HttpServlet {
         }
         //If-None-match
         String requestETag = request.getHeader(HTTP_IF_NONE_MATCH_HEADER);
-        String actualETag = this.turnOfETag ? null : buildETagForResources(resourcesToMerge, context);
-        if (!this.turnOfETag && !isAnyResourceETagModified(resourcesToMerge, requestETag, actualETag, context)) {
+        String actualETag = turnOffETag ? null : buildETagForResources(resourcesToMerge, context);
+        if (!turnOffETag && !isAnyResourceETagModified(resourcesToMerge, requestETag, actualETag, context)) {
             return new ResourceStatus(actualETag, true);
         }
         return new ResourceStatus(actualETag, false);
@@ -423,7 +442,7 @@ public class JSCSSMergeServlet extends HttpServlet {
                 line.replace(
                         offset, //from
                         offset + refImgPath.length(), //to
-                        contextPath + (this.turnOfUrlFingerPrinting ? resolvedImgPath : addFingerPrint(buildETagForResource(resolvedImgPath, context), resolvedImgPath))
+                        contextPath + (this.turnOffUrlFingerPrinting ? resolvedImgPath : addFingerPrint(buildETagForResource(resolvedImgPath, context), resolvedImgPath))
                 );
                 updateReferenceMap(cssRealPath, imgRealPath);
                 matcher.reset(line.subSequence(offset + refImgPath.length(), line.length()));
@@ -435,7 +454,7 @@ public class JSCSSMergeServlet extends HttpServlet {
     /**
      * Class to store resource ETag and modified status
      */
-    private class ResourceStatus {
+    public static class ResourceStatus {
 
         private String actualETag;
 
