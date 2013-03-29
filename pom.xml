@@ -24,7 +24,11 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.googlecode.webutilities</groupId>
     <artifactId>webutilities</artifactId>
+<<<<<<< HEAD
     <version>0.0.7-SNAPSHOT</version>
+=======
+    <version>0.0.6-SNAPSHOT</version>
+>>>>>>> retrying again due to gpg issue
     <packaging>jar</packaging>
 
     <name>webutilities</name>
