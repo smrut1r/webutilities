@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2010-2011 Rajendra Patil
+  ~ Copyright 2010-2013 Rajendra Patil
   ~
   ~  Licensed under the Apache License, Version 2.0 (the "License");
   ~  you may not use this file except in compliance with the License.
@@ -40,9 +40,9 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:svn:http://webutilities.googlecode.com/svn/trunk</connection>
-        <developerConnection>scm:svn:https://webutilities.googlecode.com/svn/trunk</developerConnection>
-        <url>https://webutilities.googlecode.com/svn/trunk</url>
+        <connection>scm:git:git@github.com:rpatil26/webutilities.git</connection>
+        <developerConnection>git:git@github.com:rpatil26/webutilities.git</developerConnection>
+        <url>https://github.com/rpatil26/webutilities</url>
     </scm>
     <issueManagement>
         <system>Google Code</system>
