@@ -131,6 +131,7 @@ import static com.googlecode.webutilities.util.Utils.updateReferenceMap;
  * <pre>
  *  <b>expiresMinutes</b> - Relative number of minutes (added to current time) to be set as Expires header
  *  <b>useCache</b> - to cache the earlier merged contents and serve from cache. Default true.
+ *  <b>overrideExistingHeaders</b> - override headers if they exist. Default true.
  * </pre>
  * <h3>Dependency</h3>
  * <p>Servlet and JSP api (mostly provided by servlet container eg. Tomcat).</p>
@@ -180,11 +181,15 @@ public class JSCSSMergeServlet extends HttpServlet {
 
     public static final String INIT_PARAM_CUSTOM_CONTEXT_PATH_FOR_CSS_URLS = "customContextPathForCSSUrls";
 
+    public static final String INIT_PARAM_OVERRIDE_EXISTING_HEADERS = "override";
+
     private long expiresMinutes = DEFAULT_EXPIRES_MINUTES; //default value 7 days
 
     private String cacheControl = DEFAULT_CACHE_CONTROL; //default
 
     private boolean autoCorrectUrlsInCSS = true; //default
+
+    private boolean overrideExistingHeaders = true; // default
 
     private boolean turnOffETag = false; //default enable eTag
 
@@ -203,12 +208,14 @@ public class JSCSSMergeServlet extends HttpServlet {
         this.turnOffETag = readBoolean(config.getInitParameter(INIT_PARAM_TURN_OFF_E_TAG), this.turnOffETag);
         this.turnOffUrlFingerPrinting = readBoolean(config.getInitParameter(INIT_PARAM_TURN_OFF_URL_FINGERPRINTING), this.turnOffUrlFingerPrinting);
         this.customContextPathForCSSUrls = config.getInitParameter(INIT_PARAM_CUSTOM_CONTEXT_PATH_FOR_CSS_URLS);
-        LOGGER.debug("Servlet initialized: {\n\t{}:{},\n\t{}:{},\n\t{}:{},\n\t{}:{}\n\t{}:{}\n}", new Object[]{
+        this.overrideExistingHeaders = readBoolean(config.getInitParameter(INIT_PARAM_OVERRIDE_EXISTING_HEADERS), this.overrideExistingHeaders);
+        LOGGER.debug("Servlet initialized: {\n\t{}:{},\n\t{}:{},\n\t{}:{},\n\t{}:{}\n\t{}:{}\n:{}\n}", new Object[]{
                 INIT_PARAM_EXPIRES_MINUTES, String.valueOf(this.expiresMinutes),
                 INIT_PARAM_CACHE_CONTROL, this.cacheControl,
                 INIT_PARAM_AUTO_CORRECT_URLS_IN_CSS, String.valueOf(this.autoCorrectUrlsInCSS),
                 INIT_PARAM_TURN_OFF_E_TAG, String.valueOf(this.turnOffETag),
-                INIT_PARAM_TURN_OFF_URL_FINGERPRINTING, String.valueOf(this.turnOffUrlFingerPrinting)}
+                INIT_PARAM_TURN_OFF_URL_FINGERPRINTING, String.valueOf(this.turnOffUrlFingerPrinting),
+                INIT_PARAM_OVERRIDE_EXISTING_HEADERS, String.valueOf(this.overrideExistingHeaders)}
         );
     }
 
@@ -226,11 +233,21 @@ public class JSCSSMergeServlet extends HttpServlet {
             resp.setContentType(mime);
         }
         long lastModifiedFor = getLastModifiedFor(resourcesToMerge, this.getServletContext());
-        resp.addDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
-        resp.addHeader(HTTP_CACHE_CONTROL_HEADER, this.cacheControl);
-        resp.addDateHeader(HEADER_LAST_MODIFIED, lastModifiedFor);
-        if (hashForETag != null && !this.turnOffETag) {
-            resp.addHeader(HTTP_ETAG_HEADER, hashForETag);
+
+        if(this.overrideExistingHeaders) {
+            resp.setDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
+            resp.setHeader(HTTP_CACHE_CONTROL_HEADER, this.cacheControl);
+            resp.setDateHeader(HEADER_LAST_MODIFIED, lastModifiedFor);
+            if (hashForETag != null && !this.turnOffETag) {
+                resp.setHeader(HTTP_ETAG_HEADER, hashForETag);
+            }
+        } else {
+            resp.addDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
+            resp.addHeader(HTTP_CACHE_CONTROL_HEADER, this.cacheControl);
+            resp.addDateHeader(HEADER_LAST_MODIFIED, lastModifiedFor);
+            if (hashForETag != null && !this.turnOffETag) {
+                resp.addHeader(HTTP_ETAG_HEADER, hashForETag);
+            }
         }
         resp.addHeader(HEADER_X_OPTIMIZED_BY, X_OPTIMIZED_BY_VALUE);
         LOGGER.trace("Added expires, last-modified & ETag headers");
@@ -298,12 +315,24 @@ public class JSCSSMergeServlet extends HttpServlet {
             LOGGER.trace("Setting MIME to {}", mime);
             response.setContentType(mime);
         }
-        response.addDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
+        if(this.overrideExistingHeaders) {
+            response.setDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
+        } else {
+            response.addDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
+        }
         if (cacheControl != null) {
-            response.addHeader(HTTP_CACHE_CONTROL_HEADER, cacheControl);
+            if(this.overrideExistingHeaders) {
+                response.setHeader(HTTP_CACHE_CONTROL_HEADER, cacheControl);
+            } else {
+                response.addHeader(HTTP_CACHE_CONTROL_HEADER, cacheControl);
+            }
         }
         if (hashForETag != null /*&& !this.turnOffETag*/) {
-            response.addHeader(HTTP_ETAG_HEADER, hashForETag);
+            if(this.overrideExistingHeaders) {
+                response.setHeader(HTTP_ETAG_HEADER, hashForETag);
+            } else {
+                response.addHeader(HTTP_ETAG_HEADER, hashForETag);
+            }
         }
         response.addHeader(HEADER_X_OPTIMIZED_BY, X_OPTIMIZED_BY_VALUE);
         LOGGER.trace("Added expires, last-modified & ETag headers");
