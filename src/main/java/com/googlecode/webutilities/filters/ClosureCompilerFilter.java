@@ -127,7 +127,7 @@ public class ClosureCompilerFilter extends AbstractFilter {
                 LOGGER.trace("Compressing JS/JSON type");
                 CompilationLevel level = CompilationLevel.SIMPLE_OPTIMIZATIONS;
                 level.setOptionsForCompilationLevel(compilerOptions);
-                Result result = closureCompiler.compile(nullExtern, SourceFile.fromInputStream(null, is), compilerOptions);
+                Result result = closureCompiler.compile(nullExtern, SourceFile.fromInputStream("NULL", is), compilerOptions);
                 if (result.success) {
                     out.append(closureCompiler.toSource());
                 }
