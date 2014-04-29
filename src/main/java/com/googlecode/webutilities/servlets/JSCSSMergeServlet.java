@@ -275,7 +275,7 @@ public class JSCSSMergeServlet extends HttpServlet {
         if (status.isNotModified()) {
             LOGGER.trace("Resources Not Modified. Sending 304.");
             String ETag = !this.turnOffETag ? status.getActualETag() : null;
-            JSCSSMergeServlet.sendNotModified(resp, extensionOrPath, ETag, this.expiresMinutes, this.cacheControl);
+            JSCSSMergeServlet.sendNotModified(resp, extensionOrPath, ETag, this.expiresMinutes, this.cacheControl, this.overrideExistingHeaders);
             return;
         }
 
@@ -303,11 +303,15 @@ public class JSCSSMergeServlet extends HttpServlet {
         }
         LOGGER.debug("Finished processing Request : {}", url);
     }
-
+    public static void sendNotModified(HttpServletResponse response, String extensionOrFile, String hashForETag,
+                                     long expiresMinutes, String cacheControl) {
+        sendNotModified(response, extensionOrFile, hashForETag, expiresMinutes, cacheControl, false);
+    }
     /**
      * @param response httpServletResponse
      */
-    public static void sendNotModified(HttpServletResponse response, String extensionOrFile, String hashForETag, long expiresMinutes, String cacheControl) {
+    public static void sendNotModified(HttpServletResponse response, String extensionOrFile, String hashForETag,
+                                       long expiresMinutes, String cacheControl, boolean overrideExistingHeaders) {
         response.setContentLength(0);
         response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
         String mime = selectMimeForExtension(extensionOrFile);
@@ -315,20 +319,20 @@ public class JSCSSMergeServlet extends HttpServlet {
             LOGGER.trace("Setting MIME to {}", mime);
             response.setContentType(mime);
         }
-        if(this.overrideExistingHeaders) {
+        if(overrideExistingHeaders) {
             response.setDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
         } else {
             response.addDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
         }
         if (cacheControl != null) {
-            if(this.overrideExistingHeaders) {
+            if(overrideExistingHeaders) {
                 response.setHeader(HTTP_CACHE_CONTROL_HEADER, cacheControl);
             } else {
                 response.addHeader(HTTP_CACHE_CONTROL_HEADER, cacheControl);
             }
         }
         if (hashForETag != null /*&& !this.turnOffETag*/) {
-            if(this.overrideExistingHeaders) {
+            if(overrideExistingHeaders) {
                 response.setHeader(HTTP_ETAG_HEADER, hashForETag);
             } else {
                 response.addHeader(HTTP_ETAG_HEADER, hashForETag);

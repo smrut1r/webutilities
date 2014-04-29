@@ -29,9 +29,8 @@ import java.io.Writer;
 import java.util.Enumeration;
 import java.util.logging.Level;
 
-import com.google.javascript.jscomp.BasicErrorManager;
-import com.google.javascript.jscomp.CheckLevel;
-import com.google.javascript.jscomp.JSError;
+import com.google.javascript.jscomp.*;
+import com.google.javascript.jscomp.Compiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,13 +42,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.google.javascript.jscomp.CompilationLevel;
-import com.google.javascript.jscomp.Compiler;
-import com.google.javascript.jscomp.CompilerOptions;
-import com.google.javascript.jscomp.CodingConventions;
-import com.google.javascript.jscomp.JSSourceFile;
-import com.google.javascript.jscomp.LoggerErrorManager;
-import com.google.javascript.jscomp.Result;
 import com.googlecode.webutilities.common.Constants;
 import com.googlecode.webutilities.common.WebUtilitiesResponseWrapper;
 import com.googlecode.webutilities.filters.common.AbstractFilter;
@@ -67,7 +59,7 @@ public class ClosureCompilerFilter extends AbstractFilter {
 
     CompilerOptions compilerOptions;
 
-    JSSourceFile nullExtern = JSSourceFile.fromCode("/dev/null", "");
+    SourceFile nullExtern = SourceFile.fromCode("/dev/null", "");
 
     private static final String PROCESSED_ATTR = YUIMinFilter.class.getName() + ".MINIFIED";
 
@@ -135,7 +127,7 @@ public class ClosureCompilerFilter extends AbstractFilter {
                 LOGGER.trace("Compressing JS/JSON type");
                 CompilationLevel level = CompilationLevel.SIMPLE_OPTIMIZATIONS;
                 level.setOptionsForCompilationLevel(compilerOptions);
-                Result result = closureCompiler.compile(nullExtern, JSSourceFile.fromInputStream(null, is), compilerOptions);
+                Result result = closureCompiler.compile(nullExtern, SourceFile.fromInputStream(null, is), compilerOptions);
                 if (result.success) {
                     out.append(closureCompiler.toSource());
                 }
