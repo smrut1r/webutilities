@@ -18,33 +18,64 @@
 
 package com.googlecode.webutilities.filters.compression;
 
+import com.googlecode.webutilities.common.Constants;
+
 import java.io.IOException;
 import java.io.InputStream;
 
 import javax.servlet.ServletInputStream;
 
-final class CompressedServletInputStream extends ServletInputStream {
+final class CompressedAndThrottledServletInputStream extends ServletInputStream {
+
+    private static final long SLEEP_DURATION_MS = 50;
 
     private final InputStream compressedStream;
 
     private boolean closed;
 
-    CompressedServletInputStream(InputStream inputStream, EncodedStreamsFactory encodedStreamsFactory) throws IOException {
+    private long readRatePerSecond;
+
+    private final long startTime = System.currentTimeMillis();
+
+    private long bytesRead = 0;
+
+    CompressedAndThrottledServletInputStream(InputStream inputStream, EncodedStreamsFactory encodedStreamsFactory,
+                                             long allowedBytesPerSecond) throws IOException {
+        this.readRatePerSecond = allowedBytesPerSecond > 0 ? allowedBytesPerSecond : Constants.DEFAULT_DECOMPRESS_BYTES_PER_SECOND;
         this.compressedStream = encodedStreamsFactory.getCompressedStream(inputStream).getCompressedInputStream();
     }
 
     public int read() throws IOException {
         assertOpen();
+        throttle();
         return compressedStream.read();
     }
 
+    private void throttle() throws IOException {
+        if (getBytesPerSec() > this.readRatePerSecond) {
+            try {
+                Thread.sleep(SLEEP_DURATION_MS);
+            } catch (InterruptedException e) {
+                throw new IOException("Thread aborted", e);
+            }
+        }
+    }
+    public long getBytesPerSec() {
+        long elapsed = (System.currentTimeMillis() - startTime) / 1000;
+        if (elapsed == 0) {
+            return bytesRead;
+        } else {
+            return bytesRead / elapsed;
+        }
+    }
     public int read(byte[] b) throws IOException {
         assertOpen();
+        throttle();
         return compressedStream.read(b);
     }
-
     public int read(byte[] b, int offset, int length) throws IOException {
         assertOpen();
+        throttle();
         return compressedStream.read(b, offset, length);
     }
 

@@ -209,13 +209,13 @@ public class JSCSSMergeServlet extends HttpServlet {
         this.turnOffUrlFingerPrinting = readBoolean(config.getInitParameter(INIT_PARAM_TURN_OFF_URL_FINGERPRINTING), this.turnOffUrlFingerPrinting);
         this.customContextPathForCSSUrls = config.getInitParameter(INIT_PARAM_CUSTOM_CONTEXT_PATH_FOR_CSS_URLS);
         this.overrideExistingHeaders = readBoolean(config.getInitParameter(INIT_PARAM_OVERRIDE_EXISTING_HEADERS), this.overrideExistingHeaders);
-        LOGGER.debug("Servlet initialized: {\n\t{}:{},\n\t{}:{},\n\t{}:{},\n\t{}:{}\n\t{}:{}\n:{}\n}", new Object[]{
+        LOGGER.debug("Servlet initialized: {\n\t{}:{},\n\t{}:{},\n\t{}:{},\n\t{}:{}\n\t{}:{}\n:{}\n}",
                 INIT_PARAM_EXPIRES_MINUTES, String.valueOf(this.expiresMinutes),
                 INIT_PARAM_CACHE_CONTROL, this.cacheControl,
                 INIT_PARAM_AUTO_CORRECT_URLS_IN_CSS, String.valueOf(this.autoCorrectUrlsInCSS),
                 INIT_PARAM_TURN_OFF_E_TAG, String.valueOf(this.turnOffETag),
                 INIT_PARAM_TURN_OFF_URL_FINGERPRINTING, String.valueOf(this.turnOffUrlFingerPrinting),
-                INIT_PARAM_OVERRIDE_EXISTING_HEADERS, String.valueOf(this.overrideExistingHeaders)}
+                INIT_PARAM_OVERRIDE_EXISTING_HEADERS, String.valueOf(this.overrideExistingHeaders)
         );
     }
 

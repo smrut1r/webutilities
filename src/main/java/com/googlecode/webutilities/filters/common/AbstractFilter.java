@@ -94,12 +94,12 @@ public abstract class AbstractFilter implements Filter, IgnoreAcceptContext {
         this.acceptUAPattern = filterConfig.getInitParameter(INIT_PARAM_ACCEPT_UA_PATTERN);
 
         LOGGER.debug("Abstract Filter initialized with: {\n\t{}:{},\n\t{}:{},\n\t{}:{},\n\t{}:{}\n\t{}:{},\n\t{}:{}\n}",
-            new Object[]{INIT_PARAM_IGNORE_URL_PATTERN, ignoreURLPattern,
+            INIT_PARAM_IGNORE_URL_PATTERN, ignoreURLPattern,
                 INIT_PARAM_ACCEPT_URL_PATTERN, acceptURLPattern,
                 INIT_PARAM_IGNORE_MIME_PATTERN, acceptMIMEPattern,
                 INIT_PARAM_ACCEPT_MIME_PATTERN, ignoreMIMEPattern,
                 INIT_PARAM_IGNORE_UA_PATTERN, ignoreUAPattern,
-                INIT_PARAM_ACCEPT_UA_PATTERN, acceptUAPattern}
+                INIT_PARAM_ACCEPT_UA_PATTERN, acceptUAPattern
         );
     }
 

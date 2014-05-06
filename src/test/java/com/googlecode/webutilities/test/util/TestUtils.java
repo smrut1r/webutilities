@@ -75,7 +75,7 @@ public final class TestUtils {
             int ch2 = streamRight.read();
             if (ch != ch2) {
                 if(pos == 9){ //Ignore OS byte in GZIP header
-                	LOGGER.info("Ignoring OS bit.... {} != {}", new Object[]{ch, ch2});
+                	LOGGER.info("Ignoring OS bit.... {} != {}", ch, ch2);
                     continue;
                 }
                 return false;

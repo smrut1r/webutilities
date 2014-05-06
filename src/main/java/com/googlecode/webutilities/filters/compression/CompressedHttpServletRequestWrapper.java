@@ -37,15 +37,18 @@ public final class CompressedHttpServletRequestWrapper extends HttpServletReques
 
     private final HttpServletRequest request;
     private final EncodedStreamsFactory encodedStreamsFactory;
-    private CompressedServletInputStream compressedStream;
+    private CompressedAndThrottledServletInputStream compressedStream;
     private BufferedReader bufferedReader;
     private boolean getInputStreamCalled;
     private boolean getReaderCalled;
+    private long decompressionRate;
 
-    public CompressedHttpServletRequestWrapper(HttpServletRequest request, EncodedStreamsFactory encodedStreamsFactory) {
+    public CompressedHttpServletRequestWrapper(HttpServletRequest request, EncodedStreamsFactory encodedStreamsFactory,
+                                               long decompressionRate) {
         super(request);
         this.request = request;
         this.encodedStreamsFactory = encodedStreamsFactory;
+        this.decompressionRate = decompressionRate;
 
     }
 
@@ -69,10 +72,10 @@ public final class CompressedHttpServletRequestWrapper extends HttpServletReques
         return bufferedReader;
     }
 
-    private CompressedServletInputStream getCompressedServletInputStream() throws IOException {
+    private CompressedAndThrottledServletInputStream getCompressedServletInputStream() throws IOException {
         if (compressedStream == null) {
-            compressedStream = new CompressedServletInputStream(request.getInputStream(),
-                    encodedStreamsFactory);
+            compressedStream = new CompressedAndThrottledServletInputStream(request.getInputStream(),
+                    encodedStreamsFactory, this.decompressionRate);
         }
         return compressedStream;
     }

@@ -19,6 +19,7 @@ package com.googlecode.webutilities.filters;
 
 import static com.googlecode.webutilities.common.Constants.CONTENT_ENCODING_IDENTITY;
 import static com.googlecode.webutilities.common.Constants.DEFAULT_COMPRESSION_SIZE_THRESHOLD;
+import static com.googlecode.webutilities.common.Constants.DEFAULT_DECOMPRESS_BYTES_PER_SECOND;
 import static com.googlecode.webutilities.common.Constants.HTTP_ACCEPT_ENCODING_HEADER;
 import static com.googlecode.webutilities.common.Constants.HTTP_CONTENT_ENCODING_HEADER;
 import static com.googlecode.webutilities.util.Utils.*;
@@ -61,9 +62,14 @@ public class CompressionFilter extends AbstractFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompressionFilter.class.getName());
 
     /**
-     * The threshold number of bytes) to compress
+     * The threshold (number of bytes) to compress
      */
     private int compressionThreshold = DEFAULT_COMPRESSION_SIZE_THRESHOLD;
+
+    /**
+    * The default decompression rate
+    */
+    private long decompressionRate = DEFAULT_DECOMPRESS_BYTES_PER_SECOND;
 
     /**
      * To mark the request that it is processed
@@ -80,6 +86,11 @@ public class CompressionFilter extends AbstractFilter {
      */
     private static final String INIT_PARAM_COMPRESSION_THRESHOLD = "compressionThreshold";
 
+    /**
+    * Compressed HTTP request can be decompressed at this rate (max bytes per second)
+    */
+    private static final String INIT_PARAM_DECOMPRESS_MAX_BYTES_PER_SECOND = "decompressMaxBytesPerSecond";
+
     /* (non-Javadoc)
      * @see javax.servlet.Filter#init(javax.servlet.FilterConfig)
      */
@@ -88,12 +99,17 @@ public class CompressionFilter extends AbstractFilter {
         super.init(filterConfig);
 
         int compressionMinSize = readInt(filterConfig.getInitParameter(INIT_PARAM_COMPRESSION_THRESHOLD), this.compressionThreshold);
+        long decompressMaxBytesPerSecond = readLong(filterConfig.getInitParameter(INIT_PARAM_DECOMPRESS_MAX_BYTES_PER_SECOND),
+            this.decompressionRate);
 
         if (compressionMinSize > 0) { // priority given to configured value
             this.compressionThreshold = compressionMinSize;
         }
-        LOGGER.trace("Filter initialized with: {}:{}", new Object[]{
-            INIT_PARAM_COMPRESSION_THRESHOLD, String.valueOf(this.compressionThreshold)});
+        if (decompressMaxBytesPerSecond > 0) { // priority given to configured value
+            this.decompressionRate = decompressMaxBytesPerSecond;
+        }
+        LOGGER.trace("Filter initialized with: {}:{},\n{}:{}", INIT_PARAM_COMPRESSION_THRESHOLD, String.valueOf(this.compressionThreshold),
+            INIT_PARAM_DECOMPRESS_MAX_BYTES_PER_SECOND, String.valueOf(this.decompressionRate));
     }
 
     /* (non-Javadoc)
@@ -158,7 +174,8 @@ public class CompressionFilter extends AbstractFilter {
 
         LOGGER.debug("Decompressing request: content encoding : {}", contentEncoding);
 
-        return new CompressedHttpServletRequestWrapper(httpRequest, EncodedStreamsFactory.getFactoryForContentEncoding(contentEncoding));
+        return new CompressedHttpServletRequestWrapper(
+            httpRequest, EncodedStreamsFactory.getFactoryForContentEncoding(contentEncoding), this.decompressionRate);
 
     }
 

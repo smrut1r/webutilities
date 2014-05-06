@@ -126,7 +126,7 @@ public class CharacterEncodingFilter extends AbstractFilter {
         this.encoding = filterConfig.getInitParameter(INIT_PARAM_ENCODING);
         this.force = readBoolean(filterConfig.getInitParameter(INIT_PARAM_FORCE), this.force);
 
-        LOGGER.debug("Filter initialized with: {}:{}, {}:{}", new Object[]{INIT_PARAM_ENCODING, encoding, INIT_PARAM_FORCE, force.toString()});
+        LOGGER.debug("Filter initialized with: {}:{}, {}:{}", INIT_PARAM_ENCODING, encoding, INIT_PARAM_FORCE, force.toString());
     }
 
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -145,7 +145,7 @@ public class CharacterEncodingFilter extends AbstractFilter {
             extensionOrFile = resources.get(0);
         }
         String mime = selectMimeForExtension(extensionOrFile);
-        LOGGER.trace("Predicted output mime : {} for URL: {} ", new Object[]{mime, url});
+        LOGGER.trace("Predicted output mime : {} for URL: {} ", mime, url);
         chain.doFilter(req, resp); //Let response be written and then force response encoding
         if (encoding != null && force && this.isMIMEAccepted(mime)) {
             try {

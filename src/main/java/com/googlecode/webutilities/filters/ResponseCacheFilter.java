@@ -45,7 +45,6 @@ import static com.googlecode.webutilities.util.Utils.findResourcesToMerge;
 import static com.googlecode.webutilities.util.Utils.getLastModifiedFor;
 import static com.googlecode.webutilities.util.Utils.isAnyResourceModifiedSince;
 import static com.googlecode.webutilities.util.Utils.readInt;
-import static com.googlecode.webutilities.util.Utils.readString;
 
 
 /**
@@ -158,8 +157,8 @@ public class ResponseCacheFilter extends AbstractFilter {
             cache = buildCache(reloadTime);
 
         LOGGER.debug("Cache Filter initialized with: {}:{},\n{}:{}",
-                new Object[]{INIT_PARAM_RELOAD_TIME, String.valueOf(reloadTime),
-                        INIT_PARAM_RESET_TIME, String.valueOf(resetTime)});
+                INIT_PARAM_RELOAD_TIME, String.valueOf(reloadTime),
+                        INIT_PARAM_RESET_TIME, String.valueOf(resetTime));
     }
 
     @Override

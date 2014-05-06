@@ -384,7 +384,7 @@ public class CompressedHttpServletResponseWrapper extends WebUtilitiesResponseWr
             return true;
         }
         if (savedContentLengthSet && savedContentLength < (long) threshold) {
-            LOGGER.trace("No Compression: Already set content length {} less than threshold {}", new Object[]{savedContentLength, threshold});
+            LOGGER.trace("No Compression: Already set content length {} less than threshold {}", savedContentLength, threshold);
             return true;
         }
         if (noTransformSet) {

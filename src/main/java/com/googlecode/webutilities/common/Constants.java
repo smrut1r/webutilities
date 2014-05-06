@@ -71,6 +71,8 @@ public final class Constants {
 
     public static final int DEFAULT_COMPRESSION_SIZE_THRESHOLD = 128 * 1024; //128KB
 
+    public static final long DEFAULT_DECOMPRESS_BYTES_PER_SECOND = Long.MAX_VALUE;
+
     public static final String HTTP_VARY_HEADER = "Vary";
 
     public static final String HTTP_ACCEPT_ENCODING_HEADER = "Accept-Encoding";

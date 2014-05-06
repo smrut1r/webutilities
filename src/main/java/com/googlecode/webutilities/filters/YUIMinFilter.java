@@ -233,12 +233,12 @@ public class YUIMinFilter extends AbstractFilter {
 
         this.disableOptimizations = readBoolean(filterConfig.getInitParameter(INIT_PARAM_DISABLE_OPTIMIZATIONS), this.disableOptimizations);
 
-        LOGGER.debug("Filter initialized with: {\n\t{}:{},\n\t{}:{},\n\t{}:{}\n\t{}:{},\n\t{}:{}\n}", new Object[]{
+        LOGGER.debug("Filter initialized with: {\n\t{}:{},\n\t{}:{},\n\t{}:{}\n\t{}:{},\n\t{}:{}\n}",
                 INIT_PARAM_LINE_BREAK, String.valueOf(lineBreak),
                 INIT_PARAM_NO_MUNGE, String.valueOf(noMunge),
                 INIT_PARAM_PRESERVE_SEMI, String.valueOf(preserveSemi),
                 INIT_PARAM_DISABLE_OPTIMIZATIONS, String.valueOf(disableOptimizations),
-                INIT_PARAM_CHARSET, charset});
+                INIT_PARAM_CHARSET, charset);
 
     }
 

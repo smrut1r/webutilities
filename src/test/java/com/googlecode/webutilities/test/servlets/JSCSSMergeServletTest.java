@@ -228,7 +228,7 @@ public class JSCSSMergeServletTest {
                 return; // no more test cases in properties file.
             }
 
-            LOGGER.info("Running Test {}: {}", new Object[]{this.currentTestNumber, testCase});
+            LOGGER.info("Running Test {}: {}", this.currentTestNumber, testCase);
 
             LOGGER.debug("##################################################################################################################");
             LOGGER.debug("Running Test {}:{}", this.currentTestNumber, testCase);
