@@ -172,7 +172,8 @@ public class CompressionFilter extends AbstractFilter {
             return request;
         }
 
-        LOGGER.debug("Decompressing request: content encoding : {}", contentEncoding);
+        LOGGER.debug("Decompressing request: content encoding : {}, throttled read rate: {}",
+            contentEncoding, this.decompressionRate);
 
         return new CompressedHttpServletRequestWrapper(
             httpRequest, EncodedStreamsFactory.getFactoryForContentEncoding(contentEncoding), this.decompressionRate);

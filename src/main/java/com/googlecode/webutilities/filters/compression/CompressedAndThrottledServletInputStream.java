@@ -19,6 +19,8 @@
 package com.googlecode.webutilities.filters.compression;
 
 import com.googlecode.webutilities.common.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +28,8 @@ import java.io.InputStream;
 import javax.servlet.ServletInputStream;
 
 final class CompressedAndThrottledServletInputStream extends ServletInputStream {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompressedAndThrottledServletInputStream.class.getName());
 
     private static final long SLEEP_DURATION_MS = 50;
 
@@ -35,7 +39,7 @@ final class CompressedAndThrottledServletInputStream extends ServletInputStream 
 
     private long readRatePerSecond;
 
-    private final long startTime = System.currentTimeMillis();
+    private final long startTime;
 
     private long bytesRead = 0;
 
@@ -43,16 +47,21 @@ final class CompressedAndThrottledServletInputStream extends ServletInputStream 
                                              long allowedBytesPerSecond) throws IOException {
         this.readRatePerSecond = allowedBytesPerSecond > 0 ? allowedBytesPerSecond : Constants.DEFAULT_DECOMPRESS_BYTES_PER_SECOND;
         this.compressedStream = encodedStreamsFactory.getCompressedStream(inputStream).getCompressedInputStream();
+        this.startTime = System.currentTimeMillis();
     }
 
     public int read() throws IOException {
         assertOpen();
         throttle();
-        return compressedStream.read();
+        int count = compressedStream.read();
+        if(count > 0) {
+          bytesRead += count;
+        }
+        return count;
     }
 
     private void throttle() throws IOException {
-        if (getBytesPerSec() > this.readRatePerSecond) {
+        if (getReadRate() > this.readRatePerSecond) {
             try {
                 Thread.sleep(SLEEP_DURATION_MS);
             } catch (InterruptedException e) {
@@ -60,7 +69,7 @@ final class CompressedAndThrottledServletInputStream extends ServletInputStream 
             }
         }
     }
-    public long getBytesPerSec() {
+    public long getReadRate() {
         long elapsed = (System.currentTimeMillis() - startTime) / 1000;
         if (elapsed == 0) {
             return bytesRead;
@@ -71,12 +80,20 @@ final class CompressedAndThrottledServletInputStream extends ServletInputStream 
     public int read(byte[] b) throws IOException {
         assertOpen();
         throttle();
-        return compressedStream.read(b);
+        int count = compressedStream.read(b);
+        if(count > 0) {
+            bytesRead += count;
+        }
+        return count;
     }
     public int read(byte[] b, int offset, int length) throws IOException {
         assertOpen();
         throttle();
-        return compressedStream.read(b, offset, length);
+        int count = compressedStream.read(b, offset, length);
+        if(count > 0) {
+            bytesRead += count;
+        }
+        return count;
     }
 
     public long skip(long n) throws IOException {
@@ -94,6 +111,8 @@ final class CompressedAndThrottledServletInputStream extends ServletInputStream 
             compressedStream.close();
             closed = true;
         }
+      long elapsedSecondsSinceStart = (System.currentTimeMillis() - startTime) / 1000;
+      LOGGER.debug("Finished reading {} bytes in {} seconds. (average rate: {})", bytesRead, elapsedSecondsSinceStart, getReadRate());
     }
 
     public synchronized void mark(int limit) {
