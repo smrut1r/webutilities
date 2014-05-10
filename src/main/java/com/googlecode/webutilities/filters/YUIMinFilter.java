@@ -25,12 +25,10 @@ import static com.googlecode.webutilities.common.Constants.MIME_JS;
 import static com.googlecode.webutilities.common.Constants.MIME_JSON;
 import static com.googlecode.webutilities.util.Utils.*;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.nio.charset.Charset;
 
+import com.googlecode.webutilities.common.NullOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -157,10 +155,10 @@ public class YUIMinFilter extends AbstractFilter {
         boolean skipMinFilter = rq.getParameter(Constants.PARAM_DEBUG) != null;
 
         if (!skipMinFilter
-            && !alreadyProcessed
-            && isURLAccepted(url)
-            && isQueryStringAccepted(rq.getQueryString())
-            && isUserAgentAccepted(rq.getHeader(Constants.HTTP_USER_AGENT_HEADER)) && (lowerUrl.endsWith(EXT_JS) || lowerUrl.endsWith(EXT_JSON) || lowerUrl.endsWith(EXT_CSS))) {
+                && !alreadyProcessed
+                && isURLAccepted(url)
+                && isQueryStringAccepted(rq.getQueryString())
+                && isUserAgentAccepted(rq.getHeader(Constants.HTTP_USER_AGENT_HEADER)) && (lowerUrl.endsWith(EXT_JS) || lowerUrl.endsWith(EXT_JSON) || lowerUrl.endsWith(EXT_CSS))) {
 
             req.setAttribute(PROCESSED_ATTR, Boolean.TRUE);
 
@@ -170,6 +168,17 @@ public class YUIMinFilter extends AbstractFilter {
             chain.doFilter(req, wrapper);
 
             Writer out = resp.getWriter();
+
+            Writer outWriter = out;
+            OutputStream nullOutputStream = null;
+
+            boolean skipMinifying = rq.getParameter(Constants.PARAM_DEBUG) != null || rq.getParameter(Constants.PARAM_SKIP_CACHE) != null;
+            if (skipMinifying) {
+                LOGGER.trace("Debug mode");
+                nullOutputStream = new NullOutputStream();
+                outWriter = new PrintWriter(nullOutputStream);
+            }
+
             String mime = wrapper.getContentType();
             if (!isMIMEAccepted(mime)) {
                 out.write(wrapper.getContents());
@@ -188,7 +197,7 @@ public class YUIMinFilter extends AbstractFilter {
                 // Fixed bug with contentLength
                 StringWriter stringWriter = new StringWriter();
                 compressor.compress(stringWriter, this.lineBreak, !this.noMunge, false, this.preserveSemi, this.disableOptimizations);
-                writeCompressedResponse(resp, out, stringWriter);
+                writeCompressedResponse(resp, outWriter, stringWriter);
 
             } else if (lowerUrl.endsWith(EXT_CSS) || (wrapper.getContentType() != null && (wrapper.getContentType().equals(MIME_CSS)))) {
                 CssCompressor compressor = new CssCompressor(sr);
@@ -197,13 +206,18 @@ public class YUIMinFilter extends AbstractFilter {
                 // Fixed bug with contentLength
                 StringWriter stringWriter = new StringWriter();
                 compressor.compress(stringWriter, this.lineBreak);
-                writeCompressedResponse(resp, out, stringWriter);
+                writeCompressedResponse(resp, outWriter, stringWriter);
 
             } else {
                 LOGGER.trace("Not Compressing anything.");
-                out.write(wrapper.getContents());
+                outWriter.write(wrapper.getContents());
             }
 
+            if (skipMinifying) {
+                out.write(wrapper.getContents());
+                nullOutputStream.close();
+                outWriter.close();
+            }
             out.flush();
         } else {
             LOGGER.trace("Not minifying. URL/UserAgent not allowed.");
