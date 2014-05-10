@@ -156,7 +156,11 @@ public class YUIMinFilter extends AbstractFilter {
         boolean alreadyProcessed = req.getAttribute(PROCESSED_ATTR) != null;
         boolean skipMinFilter = rq.getParameter(Constants.PARAM_DEBUG) != null;
 
-        if (!skipMinFilter && !alreadyProcessed && isURLAccepted(url) && isUserAgentAccepted(rq.getHeader(Constants.HTTP_USER_AGENT_HEADER)) && (lowerUrl.endsWith(EXT_JS) || lowerUrl.endsWith(EXT_JSON) || lowerUrl.endsWith(EXT_CSS))) {
+        if (!skipMinFilter
+            && !alreadyProcessed
+            && isURLAccepted(url)
+            && isQueryStringAccepted(rq.getQueryString())
+            && isUserAgentAccepted(rq.getHeader(Constants.HTTP_USER_AGENT_HEADER)) && (lowerUrl.endsWith(EXT_JS) || lowerUrl.endsWith(EXT_JSON) || lowerUrl.endsWith(EXT_CSS))) {
 
             req.setAttribute(PROCESSED_ATTR, Boolean.TRUE);
 

@@ -133,7 +133,10 @@ public class CharacterEncodingFilter extends AbstractFilter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
         String url = req.getRequestURI();
-        if (isURLAccepted(url) && isUserAgentAccepted(req.getHeader(Constants.HTTP_USER_AGENT_HEADER)) && (force || request.getCharacterEncoding() == null)) {
+        if (isURLAccepted(url)
+            && isQueryStringAccepted(req.getQueryString())
+            && isUserAgentAccepted(req.getHeader(Constants.HTTP_USER_AGENT_HEADER))
+            && (force || request.getCharacterEncoding() == null)) {
             if (encoding != null) {
                 request.setCharacterEncoding(encoding);
                 LOGGER.debug("Applied request encoding : {}", encoding);

@@ -222,6 +222,10 @@ public class ModulesFilter extends AbstractFilter {
 
                 String acceptUAPattern;
 
+                String ignoreQSPattern;
+
+                String acceptQSPattern;
+
                 String line;
 
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
@@ -250,7 +254,13 @@ public class ModulesFilter extends AbstractFilter {
                             acceptUAPattern = extractRegExFor(line, "acceptUA");
                             ignoreUAPattern = extractRegExFor(line, "ignoreUA");
 
-                            currentMapping = new RuleMapping(ignoreURLPattern, acceptURLPattern, ignoreMIMEPattern, acceptMIMEPattern, ignoreUAPattern, acceptUAPattern);
+                            acceptQSPattern = extractRegExFor(line, "acceptQS");
+                            ignoreQSPattern = extractRegExFor(line, "ignoreQS");
+
+                            currentMapping = new RuleMapping(ignoreURLPattern, acceptURLPattern,
+                                ignoreMIMEPattern, acceptMIMEPattern,
+                                ignoreUAPattern, acceptUAPattern,
+                                ignoreQSPattern, acceptQSPattern);
 
                             continue;
                         }
@@ -325,13 +335,22 @@ public class ModulesFilter extends AbstractFilter {
 
         private String acceptUAPattern;
 
-        RuleMapping(String ignoreURLPattern, String acceptURLPattern, String ignoreMIMEPattern, String acceptMIMEPattern, String ignoreUAPattern, String acceptUAPattern) {
+        private String ignoreQSPattern;
+
+        private String acceptQSPattern;
+
+        RuleMapping(String ignoreURLPattern, String acceptURLPattern,
+                    String ignoreMIMEPattern, String acceptMIMEPattern,
+                    String ignoreUAPattern, String acceptUAPattern,
+                    String ignoreQSPattern, String acceptQSPattern) {
             this.ignoreURLPattern = ignoreURLPattern;
             this.acceptURLPattern = acceptURLPattern;
             this.ignoreMIMEPattern = ignoreMIMEPattern;
             this.acceptMIMEPattern = acceptMIMEPattern;
             this.ignoreUAPattern = ignoreUAPattern;
             this.acceptUAPattern = acceptUAPattern;
+            this.ignoreQSPattern = ignoreQSPattern;
+            this.acceptQSPattern = acceptQSPattern;
         }
 
         private final Map<String, IModule> modules = new LinkedHashMap<String, IModule>();
@@ -360,7 +379,16 @@ public class ModulesFilter extends AbstractFilter {
             return !this.isUserAgentIgnored(userAgent) && (this.acceptUAPattern == null || (userAgent != null && userAgent.matches(acceptUAPattern)));
         }
 
-        public IModule getModule(String name) {
+        private boolean isQueryStringIgnored(String queryString) {
+            return this.ignoreQSPattern != null && queryString != null && queryString.matches(ignoreQSPattern);
+        }
+
+        public boolean isQueryStringAccepted(String queryString) {
+            return !this.isQueryStringIgnored(queryString) && (this.acceptQSPattern == null || (queryString != null && queryString.matches(acceptQSPattern)));
+        }
+
+
+      public IModule getModule(String name) {
             return modules.get(name);
         }
 

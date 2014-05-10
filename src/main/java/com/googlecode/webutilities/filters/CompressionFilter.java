@@ -232,7 +232,10 @@ public class CompressionFilter extends AbstractFilter {
             LOGGER.trace("No Compression: For path: ", requestURI);
             return response;
         }
-
+        if (!isQueryStringAccepted(httpRequest.getQueryString())) {
+            LOGGER.trace("No Compression: For Query String: ", httpRequest.getQueryString());
+            return response;
+        }
         String userAgent = httpRequest.getHeader(Constants.HTTP_USER_AGENT_HEADER);
         if (!isUserAgentAccepted(userAgent)) {
             LOGGER.trace("No Compression: For User-Agent: {}", userAgent);

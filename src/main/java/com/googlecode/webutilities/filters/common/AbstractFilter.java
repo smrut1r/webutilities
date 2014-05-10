@@ -59,6 +59,10 @@ public abstract class AbstractFilter implements Filter, IgnoreAcceptContext {
 
     private String acceptUAPattern;
 
+    private String ignoreQSPattern;
+
+    private String acceptQSPattern;
+
     private static final String INIT_PARAM_IGNORE_URL_PATTERN = "ignoreURLPattern";
 
     private static final String INIT_PARAM_ACCEPT_URL_PATTERN = "acceptURLPattern";
@@ -70,6 +74,10 @@ public abstract class AbstractFilter implements Filter, IgnoreAcceptContext {
     private static final String INIT_PARAM_IGNORE_UA_PATTERN = "ignoreUAPattern";
 
     private static final String INIT_PARAM_ACCEPT_UA_PATTERN = "acceptUAPattern";
+
+    private static final String INIT_PARAM_IGNORE_QS_PATTERN = "ignoreQueryStringPattern";
+
+    private static final String INIT_PARAM_ACCEPT_QS_PATTERN = "acceptQueryStringPattern";
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFilter.class.getName());
@@ -93,13 +101,20 @@ public abstract class AbstractFilter implements Filter, IgnoreAcceptContext {
 
         this.acceptUAPattern = filterConfig.getInitParameter(INIT_PARAM_ACCEPT_UA_PATTERN);
 
-        LOGGER.debug("Abstract Filter initialized with: {\n\t{}:{},\n\t{}:{},\n\t{}:{},\n\t{}:{}\n\t{}:{},\n\t{}:{}\n}",
+        this.ignoreQSPattern = filterConfig.getInitParameter(INIT_PARAM_IGNORE_QS_PATTERN);
+
+        this.acceptQSPattern = filterConfig.getInitParameter(INIT_PARAM_ACCEPT_QS_PATTERN);
+
+        LOGGER.debug("Abstract Filter initialized with: {\n\t{}:{},\n\t{}:{},\n\t{}:{},\n\t{}:{}\n\t{}:{},\n\t{}:{},\n" +
+            "\t{}:{}\n}",
             INIT_PARAM_IGNORE_URL_PATTERN, ignoreURLPattern,
                 INIT_PARAM_ACCEPT_URL_PATTERN, acceptURLPattern,
                 INIT_PARAM_IGNORE_MIME_PATTERN, acceptMIMEPattern,
                 INIT_PARAM_ACCEPT_MIME_PATTERN, ignoreMIMEPattern,
                 INIT_PARAM_IGNORE_UA_PATTERN, ignoreUAPattern,
-                INIT_PARAM_ACCEPT_UA_PATTERN, acceptUAPattern
+                INIT_PARAM_ACCEPT_UA_PATTERN, acceptUAPattern,
+                INIT_PARAM_IGNORE_QS_PATTERN, ignoreQSPattern,
+                INIT_PARAM_ACCEPT_QS_PATTERN, acceptQSPattern
         );
     }
 
@@ -127,7 +142,15 @@ public abstract class AbstractFilter implements Filter, IgnoreAcceptContext {
         return !this.isUserAgentIgnored(userAgent) && (this.acceptUAPattern == null || (userAgent != null && userAgent.matches(acceptUAPattern)));
     }
 
-    @Override
+    private boolean isQueryStringIgnored(String queryString) {
+        return this.ignoreQSPattern != null && queryString != null && queryString.matches(ignoreQSPattern);
+    }
+
+    public boolean isQueryStringAccepted(String queryString) {
+        return !this.isQueryStringIgnored(queryString) && (this.acceptQSPattern == null || (queryString != null && queryString.matches(acceptQSPattern)));
+    }
+
+  @Override
     public void destroy() {
         LOGGER.debug("destroying...");
         this.filterConfig = null;
