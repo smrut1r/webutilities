@@ -33,8 +33,6 @@ public class CharacterEncodingFilterTest extends AbstractFilterTest {
 
     private ResponseCacheFilter responseCacheFilter = new ResponseCacheFilter();
 
-    private ServletTestModule servletTestModule = new ServletTestModule(webMockObjectFactory);
-
     private boolean force = false;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CharacterEncodingFilterTest.class.getName());
@@ -55,8 +53,6 @@ public class CharacterEncodingFilterTest extends AbstractFilterTest {
 
     @Override
     public void prepare() {
-
-        servletTestModule = new ServletTestModule(webMockObjectFactory);
 
         servletTestModule.setServlet(jscssMergeServlet, true);
 

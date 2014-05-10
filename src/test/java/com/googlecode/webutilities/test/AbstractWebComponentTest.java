@@ -43,7 +43,7 @@ public abstract class AbstractWebComponentTest {
     protected abstract void setupInitParam(String name, String value);
 
     protected void setupResource(String resource) {
-        LOGGER.info("Setting resource : {}", resource);
+        LOGGER.debug("Setting resource : {}", resource);
         webMockObjectFactory.getMockServletContext()
                 .setResourceAsStream(resource, this.getClass().getResourceAsStream(resource));
         webMockObjectFactory.getMockServletContext()
@@ -59,11 +59,11 @@ public abstract class AbstractWebComponentTest {
     }
 
     protected void setupRequestParameter(String name, String value) {
-        LOGGER.info("Setting request param : {}={}", name, value);
+        LOGGER.debug("Setting request param : {}={}", name, value);
         webMockObjectFactory.getMockRequest().setupAddParameter(name, value);
     }
 
-    public void setUpInitParams() {
+    public void setupInitParams() {
         String value = properties.getProperty(this.currentTestNumber + ".test.init.params");
         if (value != null && !value.trim().equals("")) {
             String[] params = value.split(",");
@@ -74,7 +74,7 @@ public abstract class AbstractWebComponentTest {
         }
     }
 
-    public void setUpResources() {
+    public void setupResources() {
         String resourcesString = properties.getProperty(this.currentTestNumber + ".test.resources");
         if (resourcesString != null && !resourcesString.trim().equals("")) {
             String[] resources = resourcesString.split(",");
@@ -84,7 +84,7 @@ public abstract class AbstractWebComponentTest {
         }
     }
 
-    public void setUpRequest() {
+    public void setupRequest() {
         String contextPath = properties.getProperty(this.currentTestNumber + ".test.request.contextPath");
         setupContextPath(contextPath);
 
@@ -127,6 +127,7 @@ public abstract class AbstractWebComponentTest {
             }
         }
     }
+
     public int getExpectedStatus(int defaultStatus) throws Exception {
         return Utils.readInt(properties.getProperty(this.currentTestNumber + ".test.expected.status"), defaultStatus);
     }
@@ -170,17 +171,21 @@ public abstract class AbstractWebComponentTest {
 
         webMockObjectFactory = new WebMockObjectFactory();
 
-        this.setUpInitParams();
+        this.initModule();
 
-        this.setUpResources();
+        this.setupInitParams();
+
+        this.setupResources();
 
         this.prepare();
 
-        this.setUpRequest();
+        this.setupRequest();
 
     }
 
-    public abstract void prepare();
+    protected abstract void initModule();
+
+    protected abstract void prepare() throws Exception;
 
     public void post() {
         this.currentTestNumber++;
@@ -201,15 +206,15 @@ public abstract class AbstractWebComponentTest {
                 //return; // no more test cases in properties file.
             }
 
-            LOGGER.info("Running Test {}:{}", this.currentTestNumber, testCase);
-
-            LOGGER.debug("##################################################################################################################");
-            LOGGER.debug("Running Test {}:{}", this.currentTestNumber, testCase);
-            LOGGER.debug("##################################################################################################################");
+            LOGGER.info("##################################################################################################################");
+            LOGGER.debug("Test {} : {}", this.currentTestNumber, testCase);
 
 
             this.executeCurrentTestLogic();
 
+
+            LOGGER.info("Test {} : PASS. {}", this.currentTestNumber, testCase);
+            LOGGER.info("##################################################################################################################");
 
             this.post();
 

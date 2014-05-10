@@ -30,8 +30,6 @@ public class YUIMinFilterTest extends AbstractFilterTest {
 
     private YUIMinFilter yuiMinFilter = new YUIMinFilter();
 
-    private ServletTestModule servletTestModule;
-
     private static final Logger LOGGER = LoggerFactory.getLogger(YUIMinFilterTest.class.getName());
 
     @Override
@@ -41,8 +39,6 @@ public class YUIMinFilterTest extends AbstractFilterTest {
 
     @Override
     public void prepare() {
-
-        servletTestModule = new ServletTestModule(webMockObjectFactory);
 
         servletTestModule.setServlet(jscssMergeServlet, true);
 

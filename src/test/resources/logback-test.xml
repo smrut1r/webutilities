@@ -15,13 +15,15 @@
   ~  limitations under the License.
   -->
 <configuration>
-  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <layout class="ch.qos.logback.classic.PatternLayout">
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
       <Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</Pattern>
-    </layout>
+    </encoder>
   </appender>
 
-  <root level="trace">
-    <appender-ref ref="STDOUT" />
+  <root level="INFO">
+    <appender-ref ref="CONSOLE" />
   </root>
+
 </configuration>

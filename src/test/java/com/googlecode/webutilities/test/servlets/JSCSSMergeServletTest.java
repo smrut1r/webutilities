@@ -38,8 +38,6 @@ public class JSCSSMergeServletTest extends AbstractServletTest {
 
     private JSCSSMergeServlet jscssMergeServlet = new JSCSSMergeServlet();
 
-    private ServletTestModule servletTestModule;
-
     private int expiresMinutes = 2;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JSCSSMergeServletTest.class.getName());
@@ -54,16 +52,16 @@ public class JSCSSMergeServletTest extends AbstractServletTest {
     }
 
     @Override
-    public void setUpInitParams() {
-        super.setUpInitParams();
+    public void setupInitParams() {
+        super.setupInitParams();
         String value = webMockObjectFactory.getMockServletConfig().getInitParameter(JSCSSMergeServlet.INIT_PARAM_EXPIRES_MINUTES);
         if(value == null) {
             setupInitParam(JSCSSMergeServlet.INIT_PARAM_EXPIRES_MINUTES, expiresMinutes + ""); //one minute
         }
     }
 
-    public void setUpRequest() {
-        super.setUpRequest();
+    public void setupRequest() {
+        super.setupRequest();
 
         boolean removePreviousFilters = Utils.readBoolean(properties.getProperty(this.currentTestNumber + ".test.removePreviousFilters"), true);
         if(removePreviousFilters){
@@ -97,10 +95,7 @@ public class JSCSSMergeServletTest extends AbstractServletTest {
 
     @Override
     public void prepare() {
-
-        servletTestModule = new ServletTestModule(webMockObjectFactory);
         servletTestModule.setServlet(jscssMergeServlet, true);
-
     }
 
     public boolean hasCorrectDateHeaders() {

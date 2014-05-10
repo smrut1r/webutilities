@@ -234,7 +234,7 @@ public class JSCSSMergeServlet extends HttpServlet {
         }
         long lastModifiedFor = getLastModifiedFor(resourcesToMerge, this.getServletContext());
 
-        if(this.overrideExistingHeaders) {
+        if (this.overrideExistingHeaders) {
             resp.setDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
             resp.setHeader(HTTP_CACHE_CONTROL_HEADER, this.cacheControl);
             resp.setDateHeader(HEADER_LAST_MODIFIED, lastModifiedFor);
@@ -286,7 +286,8 @@ public class JSCSSMergeServlet extends HttpServlet {
         OutputStream outputStream = resp.getOutputStream();
         String contextPathForCss = customContextPathForCSSUrls != null ?
                 customContextPathForCSSUrls : req.getContextPath();
-        int resourcesNotFound = this.processResources(contextPathForCss, outputStream, resourcesToMerge);
+        ProcessedResult processedResult = this.processResources(contextPathForCss, outputStream, resourcesToMerge);
+        int resourcesNotFound = processedResult.getNumberOfMissingResources();
 
         if (resourcesNotFound > 0 && resourcesNotFound == resourcesToMerge.size()) { //all resources not found
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -301,12 +302,15 @@ public class JSCSSMergeServlet extends HttpServlet {
                 // ignore
             }
         }
+        resp.setHeader("Content-Length", String.valueOf(processedResult.contentLength));
         LOGGER.debug("Finished processing Request : {}", url);
     }
+
     public static void sendNotModified(HttpServletResponse response, String extensionOrFile, String hashForETag,
-                                     long expiresMinutes, String cacheControl) {
+                                       long expiresMinutes, String cacheControl) {
         sendNotModified(response, extensionOrFile, hashForETag, expiresMinutes, cacheControl, false);
     }
+
     /**
      * @param response httpServletResponse
      */
@@ -319,20 +323,20 @@ public class JSCSSMergeServlet extends HttpServlet {
             LOGGER.trace("Setting MIME to {}", mime);
             response.setContentType(mime);
         }
-        if(overrideExistingHeaders) {
+        if (overrideExistingHeaders) {
             response.setDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
         } else {
             response.addDateHeader(HEADER_EXPIRES, new Date().getTime() + expiresMinutes * 60 * 1000);
         }
         if (cacheControl != null) {
-            if(overrideExistingHeaders) {
+            if (overrideExistingHeaders) {
                 response.setHeader(HTTP_CACHE_CONTROL_HEADER, cacheControl);
             } else {
                 response.addHeader(HTTP_CACHE_CONTROL_HEADER, cacheControl);
             }
         }
         if (hashForETag != null /*&& !this.turnOffETag*/) {
-            if(overrideExistingHeaders) {
+            if (overrideExistingHeaders) {
                 response.setHeader(HTTP_ETAG_HEADER, hashForETag);
             } else {
                 response.addHeader(HTTP_ETAG_HEADER, hashForETag);
@@ -382,9 +386,13 @@ public class JSCSSMergeServlet extends HttpServlet {
      * @return number of non existing, unprocessed resources
      */
 
-    private int processResources(String contextPath, OutputStream outputStream, List<String> resourcesToMerge) {
+    private ProcessedResult processResources(String contextPath, OutputStream outputStream, List<String> resourcesToMerge) {
 
-        int resourcesNotFound = 0;
+        ProcessedResult processedResult;
+
+        int missingResourcesCount = 0;
+
+        long contentLength = 0;
 
         ServletContext context = this.getServletContext();
 
@@ -397,18 +405,19 @@ public class JSCSSMergeServlet extends HttpServlet {
             try {
                 is = context.getResourceAsStream(resourcePath);
                 if (is == null) {
-                    resourcesNotFound++;
+                    missingResourcesCount++;
                     continue;
                 }
                 if (resourcePath.endsWith(EXT_CSS) && autoCorrectUrlsInCSS) { //Need to deal with images url in CSS
 
-                    this.processCSS(contextPath, resourcePath, is, outputStream);
+                    contentLength += this.processCSS(contextPath, resourcePath, is, outputStream);
 
                 } else {
                     byte[] buffer = new byte[128];
                     int c;
                     while ((c = is.read(buffer)) != -1) {
                         outputStream.write(buffer, 0, c);
+                        contentLength += c;
                     }
                 }
             } catch (IOException e) {
@@ -430,7 +439,7 @@ public class JSCSSMergeServlet extends HttpServlet {
             }
 
         }
-        return resourcesNotFound;
+        return new ProcessedResult(missingResourcesCount, contentLength);
     }
 
     /**
@@ -440,17 +449,21 @@ public class JSCSSMergeServlet extends HttpServlet {
      * @param outputStream - output stream
      * @throws IOException - thrown in case anything (IO read/write) goes wrong
      */
-    private void processCSS(String contextPath, String cssFilePath, InputStream inputStream, OutputStream outputStream) throws IOException {
+    private long processCSS(String contextPath, String cssFilePath, InputStream inputStream, OutputStream outputStream) throws IOException {
         ServletContext context = this.getServletContext();
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
         String line;
+        long bytesWritten = 0;
         StringBuffer buffer = new StringBuffer();
         while ((line = bufferedReader.readLine()) != null) {
             buffer.setLength(0);
             buffer.append(line);
             line = this.processCSSLine(context, contextPath, cssFilePath, buffer);
-            outputStream.write((line + "\n").getBytes());
+            byte [] bytes = (line + "\n").getBytes();
+            outputStream.write(bytes);
+            bytesWritten += bytes.length;
         }
+        return bytesWritten;
     }
 
     /**
@@ -506,6 +519,26 @@ public class JSCSSMergeServlet extends HttpServlet {
             return notModified;
         }
 
+    }
+
+    private class ProcessedResult {
+
+        private int numberOfMissingResources;
+
+        private long contentLength;
+
+        private ProcessedResult(int numberOfMissingResources, long contentLength) {
+            this.numberOfMissingResources = numberOfMissingResources;
+            this.contentLength = contentLength;
+        }
+
+        public int getNumberOfMissingResources() {
+            return numberOfMissingResources;
+        }
+
+        public long getContentLength() {
+            return contentLength;
+        }
     }
 }
 

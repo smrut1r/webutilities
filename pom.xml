@@ -169,7 +169,10 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.9</version>
                 <configuration>
-                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <systemPropertyVariables>
+                        <logback.configurationFile>file:${project.build.testOutputDirectory}/resources/logback-test.xml</logback.configurationFile>
+                    </systemPropertyVariables>
+                    <redirectTestOutputToFile>false</redirectTestOutputToFile>
                     <excludes>
                         <include>**/TestUtils.java</include>
                     </excludes>

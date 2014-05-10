@@ -33,8 +33,6 @@ public class CompressionFilterTest extends AbstractFilterTest {
 
     private CompressionFilter compressionFilter = new CompressionFilter();
 
-    private ServletTestModule servletTestModule;
-
     private static final Logger LOGGER = LoggerFactory.getLogger(CompressionFilterTest.class.getName());
 
     @Override
@@ -44,8 +42,6 @@ public class CompressionFilterTest extends AbstractFilterTest {
 
     @Override
     public void prepare() {
-
-        servletTestModule = new ServletTestModule(webMockObjectFactory);
 
         servletTestModule.setServlet(jscssMergeServlet, true);
 
