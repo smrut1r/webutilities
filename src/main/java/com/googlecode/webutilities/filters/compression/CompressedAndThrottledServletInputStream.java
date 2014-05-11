@@ -38,56 +38,77 @@ final class CompressedAndThrottledServletInputStream extends ServletInputStream 
 
     private final long startTime;
 
-    private long bytesRead = 0;
+    private long maxBytesToRead;
+
+    private long bytesRead;
+
+    private long currentReadRate;
 
     CompressedAndThrottledServletInputStream(InputStream inputStream, EncodedStreamsFactory encodedStreamsFactory,
-                                             long allowedBytesPerSecond) throws IOException {
+                                             long allowedBytesPerSecond, long maxBytesToRead) throws IOException {
         this.readRatePerSecond = allowedBytesPerSecond > 0 ? allowedBytesPerSecond : Constants.DEFAULT_DECOMPRESS_BYTES_PER_SECOND;
         this.compressedStream = encodedStreamsFactory.getCompressedStream(inputStream).getCompressedInputStream();
         this.startTime = System.currentTimeMillis();
+        this.bytesRead = 0;
+        this.maxBytesToRead = maxBytesToRead;
     }
 
     public int read() throws IOException {
         assertOpen();
-        throttle();
+        assertReadRate();
         int count = compressedStream.read();
-        if(count > 0) {
-          bytesRead += count;
-        }
-        return count;
-    }
-
-    private void throttle() throws IOException {
-        if (getReadRate() > this.readRatePerSecond) {
-            try {
-                Thread.sleep(SLEEP_DURATION_MS);
-            } catch (InterruptedException e) {
-                throw new IOException("Thread aborted", e);
-            }
-        }
-    }
-    public long getReadRate() {
-        long elapsed = (System.currentTimeMillis() - startTime) / 1000;
-        if (elapsed == 0) {
-            return bytesRead;
-        } else {
-            return bytesRead / elapsed;
-        }
-    }
-    public int read(byte[] b) throws IOException {
-        assertOpen();
-        throttle();
-        int count = compressedStream.read(b);
-        if(count > 0) {
+        assertReadSize(count);
+        if (count > 0) {
             bytesRead += count;
         }
         return count;
     }
+
+    private void assertReadSize(int count) throws IOException {
+        if ((bytesRead + count) > maxBytesToRead) { //we crossed the allowed size
+            this.close();
+            throw new IOException("The request size is larger than allowed limit of " + maxBytesToRead + " bytes");
+        }
+    }
+
+    private void assertReadRate() throws IOException {
+        this.calculateReadRate();
+        if (this.currentReadRate > this.readRatePerSecond) {
+            try {
+                Thread.sleep(SLEEP_DURATION_MS);
+            } catch (InterruptedException e) {
+                this.close();
+                throw new IOException("Thread aborted", e);
+            }
+        }
+    }
+
+    public void calculateReadRate() {
+        long elapsed = (System.currentTimeMillis() - startTime) / 1000;
+        if (elapsed == 0) {
+            currentReadRate = bytesRead;
+        } else {
+            currentReadRate = bytesRead / elapsed;
+        }
+    }
+
+    public int read(byte[] b) throws IOException {
+        assertOpen();
+        assertReadRate();
+        int count = compressedStream.read(b);
+        assertReadSize(count);
+        if (count > 0) {
+            bytesRead += count;
+        }
+        return count;
+    }
+
     public int read(byte[] b, int offset, int length) throws IOException {
         assertOpen();
-        throttle();
+        assertReadRate();
         int count = compressedStream.read(b, offset, length);
-        if(count > 0) {
+        assertReadSize(count);
+        if (count > 0) {
             bytesRead += count;
         }
         return count;
@@ -107,9 +128,8 @@ final class CompressedAndThrottledServletInputStream extends ServletInputStream 
         if (!closed) {
             compressedStream.close();
             closed = true;
+            LOGGER.debug("Finished reading {} bytes @ average read rate: {} bytes/sec", bytesRead, currentReadRate);
         }
-      long elapsedSecondsSinceStart = (System.currentTimeMillis() - startTime) / 1000;
-      LOGGER.debug("Finished reading {} bytes in {} seconds. (average rate: {})", bytesRead, elapsedSecondsSinceStart, getReadRate());
     }
 
     public synchronized void mark(int limit) {
