@@ -1,26 +1,24 @@
 /*
+ * Copyright 2010-2014 Rajendra Patil
  *
- *  Copyright 2011 Rajendra Patil
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *  http://www.apache.org/licenses/LICENSE-2.0
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.googlecode.webutilities.filters.compression;
 
-import static com.googlecode.webutilities.common.Constants.HTTP_ACCEPT_ENCODING_HEADER;
-import static com.googlecode.webutilities.common.Constants.HTTP_CONTENT_ENCODING_HEADER;
-
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -29,9 +27,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
+import static com.googlecode.webutilities.common.Constants.HTTP_ACCEPT_ENCODING_HEADER;
+import static com.googlecode.webutilities.common.Constants.HTTP_CONTENT_ENCODING_HEADER;
 
 public final class CompressedHttpServletRequestWrapper extends HttpServletRequestWrapper {
 

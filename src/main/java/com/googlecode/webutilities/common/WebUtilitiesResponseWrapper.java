@@ -1,31 +1,28 @@
 /*
- * Copyright 2010-2011 Rajendra Patil
+ * Copyright 2010-2014 Rajendra Patil
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *  http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.googlecode.webutilities.common;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
@@ -45,9 +42,9 @@ import static com.googlecode.webutilities.common.Constants.HTTP_CONTENT_TYPE_HEA
 
 public class WebUtilitiesResponseWrapper extends HttpServletResponseWrapper {
 
-    public static final Logger               LOGGER          = LoggerFactory
-                                                                     .getLogger(WebUtilitiesResponseWrapper.class
-                                                                             .getName());
+    public static final Logger LOGGER = LoggerFactory
+            .getLogger(WebUtilitiesResponseWrapper.class
+                    .getName());
 
     private WebUtilitiesResponseOutputStream stream;
     private Map<String, Object> headers = new HashMap<String, Object>();
@@ -257,22 +254,17 @@ public class WebUtilitiesResponseWrapper extends HttpServletResponseWrapper {
             response.getOutputStream().write(this.getBytes());
             response.getOutputStream().close();
         } catch (RuntimeException ex) {
-            try{
+            try {
                 response.getWriter().write(this.getContents());
                 response.getWriter().close();
-            }catch (Exception ex1){
+            } catch (Exception ex1) {
                 LOGGER.error(ex1.getMessage(), ex1);
             }
-
-         //   ex.printStackTrace();
+            //   ex.printStackTrace();
         }
-
 
         if (response instanceof WebUtilitiesResponseWrapper) {
             ((WebUtilitiesResponseWrapper) response).fill((HttpServletResponse) ((WebUtilitiesResponseWrapper) response).getResponse());
         }
-
     }
-
-
 }

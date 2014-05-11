@@ -1,17 +1,17 @@
 /*
- * Copyright 2010-2011 Rajendra Patil
+ * Copyright 2010-2014 Rajendra Patil
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *  http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.googlecode.webutilities.servlets;
 
@@ -24,44 +24,13 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 
-import static com.googlecode.webutilities.common.Constants.CSS_IMG_URL_PATTERN;
-import static com.googlecode.webutilities.common.Constants.DEFAULT_CACHE_CONTROL;
-import static com.googlecode.webutilities.common.Constants.DEFAULT_EXPIRES_MINUTES;
-import static com.googlecode.webutilities.common.Constants.EXT_CSS;
-import static com.googlecode.webutilities.common.Constants.HEADER_EXPIRES;
-import static com.googlecode.webutilities.common.Constants.HEADER_LAST_MODIFIED;
-import static com.googlecode.webutilities.common.Constants.HEADER_X_OPTIMIZED_BY;
-import static com.googlecode.webutilities.common.Constants.HTTP_CACHE_CONTROL_HEADER;
-import static com.googlecode.webutilities.common.Constants.HTTP_ETAG_HEADER;
-import static com.googlecode.webutilities.common.Constants.HTTP_IF_MODIFIED_SINCE;
-import static com.googlecode.webutilities.common.Constants.HTTP_IF_NONE_MATCH_HEADER;
-import static com.googlecode.webutilities.common.Constants.X_OPTIMIZED_BY_VALUE;
-import static com.googlecode.webutilities.util.Utils.addFingerPrint;
-import static com.googlecode.webutilities.util.Utils.buildETagForResource;
-import static com.googlecode.webutilities.util.Utils.buildETagForResources;
-import static com.googlecode.webutilities.util.Utils.buildProperPath;
-import static com.googlecode.webutilities.util.Utils.detectExtension;
-import static com.googlecode.webutilities.util.Utils.findResourcesToMerge;
-import static com.googlecode.webutilities.util.Utils.getLastModifiedFor;
-import static com.googlecode.webutilities.util.Utils.getParentPath;
-import static com.googlecode.webutilities.util.Utils.isAnyResourceETagModified;
-import static com.googlecode.webutilities.util.Utils.isAnyResourceModifiedSince;
-import static com.googlecode.webutilities.util.Utils.isProtocolURL;
-import static com.googlecode.webutilities.util.Utils.readBoolean;
-import static com.googlecode.webutilities.util.Utils.readDateFromHeader;
-import static com.googlecode.webutilities.util.Utils.readLong;
-import static com.googlecode.webutilities.util.Utils.removeFingerPrint;
-import static com.googlecode.webutilities.util.Utils.selectMimeForExtension;
-import static com.googlecode.webutilities.util.Utils.updateReferenceMap;
+import static com.googlecode.webutilities.common.Constants.*;
+import static com.googlecode.webutilities.util.Utils.*;
 
 
 /**

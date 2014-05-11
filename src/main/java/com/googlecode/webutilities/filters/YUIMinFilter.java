@@ -1,50 +1,39 @@
 /*
- * Copyright 2010-2011 Rajendra Patil
+ * Copyright 2010-2014 Rajendra Patil
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *  http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.googlecode.webutilities.filters;
 
-import static com.googlecode.webutilities.common.Constants.DEFAULT_CHARSET;
-import static com.googlecode.webutilities.common.Constants.EXT_CSS;
-import static com.googlecode.webutilities.common.Constants.EXT_JS;
-import static com.googlecode.webutilities.common.Constants.EXT_JSON;
-import static com.googlecode.webutilities.common.Constants.MIME_CSS;
-import static com.googlecode.webutilities.common.Constants.MIME_JS;
-import static com.googlecode.webutilities.common.Constants.MIME_JSON;
-import static com.googlecode.webutilities.util.Utils.*;
-
-import java.io.*;
-import java.nio.charset.Charset;
-
-import com.googlecode.webutilities.common.NullOutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.googlecode.webutilities.common.Constants;
+import com.googlecode.webutilities.common.NullOutputStream;
 import com.googlecode.webutilities.common.WebUtilitiesResponseWrapper;
 import com.googlecode.webutilities.filters.common.AbstractFilter;
 import com.yahoo.platform.yui.compressor.CssCompressor;
 import com.yahoo.platform.yui.compressor.JavaScriptCompressor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.nio.charset.Charset;
+
+import static com.googlecode.webutilities.common.Constants.*;
+import static com.googlecode.webutilities.util.Utils.readBoolean;
+import static com.googlecode.webutilities.util.Utils.readInt;
 
 /**
  * The <code>YUIMinFilter</code> is implemented as Servlet Filter to enable on the fly minification of JS and CSS resources
@@ -186,8 +175,17 @@ public class YUIMinFilter extends AbstractFilter {
                 LOGGER.trace("Not minifying. Mime {} not allowed", mime);
                 return;
             }
+            byte [] bytes = wrapper.getBytes();
 
-            StringReader sr = new StringReader(new String(wrapper.getBytes(), this.charset));
+            if(bytes.length < 1) { //empty content. YUI Compressor fails on empty content https://github.com/yui/yuicompressor/issues/130
+                out.write(wrapper.getContents());
+                out.flush();
+                LOGGER.trace("Not minifying empty content.");
+                return;
+            }
+
+            StringReader sr = new StringReader(new String(bytes, this.charset));
+
 
             //work on generated response
             if (lowerUrl.endsWith(EXT_JS) || lowerUrl.endsWith(EXT_JSON) || (wrapper.getContentType() != null && (wrapper.getContentType().equals(MIME_JS) || wrapper.getContentType().equals(MIME_JSON)))) {
