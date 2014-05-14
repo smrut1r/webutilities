@@ -357,20 +357,18 @@ public class JSCSSMergeServlet extends HttpServlet {
 
     private ProcessedResult processResources(String contextPath, OutputStream outputStream, List<String> resourcesToMerge) {
 
-        ProcessedResult processedResult;
-
         int missingResourcesCount = 0;
 
         long contentLength = 0;
 
         ServletContext context = this.getServletContext();
-
+        boolean addNewLine = false;
         for (String resourcePath : resourcesToMerge) {
 
             LOGGER.trace("Processing resource : {}", resourcePath);
 
             InputStream is = null;
-
+            byte [] newLineBytes = "\n".getBytes();
             try {
                 is = context.getResourceAsStream(resourcePath);
                 if (is == null) {
@@ -384,10 +382,16 @@ public class JSCSSMergeServlet extends HttpServlet {
                 } else {
                     byte[] buffer = new byte[128];
                     int c;
+                    //Add extra new line to avoid merging issues when there is single line comment in the end of file
+                    if(addNewLine) {
+                        outputStream.write(newLineBytes);
+                        contentLength += newLineBytes.length;
+                    }
                     while ((c = is.read(buffer)) != -1) {
                         outputStream.write(buffer, 0, c);
                         contentLength += c;
                     }
+                    addNewLine = true;
                 }
             } catch (IOException e) {
                 LOGGER.error("Error while reading resource : {}", resourcePath);

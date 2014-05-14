@@ -4,3 +4,4 @@ var Person = function(name){
 		return name;	
 	}
 }
+//
